@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Higher-Ed Fundraising Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased">
+    <div class="flex h-screen overflow-hidden">
+        <div class="w-64 bg-slate-900 text-white p-6 hidden md:flex flex-col justify-between">
+            <div>
+                <h1 class="text-xl font-bold tracking-wider mb-8 text-indigo-400">Advancement AI</h1>
+                <nav class="space-y-4"><a href="#" class="block py-2 px-4 rounded bg-indigo-600 text-white font-medium">Live Dashboard</a></nav>
+            </div>
+            <div class="text-xs text-slate-500 border-t border-slate-800 pt-4">Connected to Google Sheets</div>
+        </div>
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            <header class="bg-white border-b border-slate-200 py-4 px-8 flex justify-between items-center shrink-0">
+                <h2 class="text-2xl font-bold text-slate-800">Live Proposal Insights</h2>
+                <div id="loadingStatus" class="text-sm text-amber-600 bg-amber-50 py-1 px-3 rounded-full font-medium animate-pulse">Syncing sheet data...</div>
+            </header>
+            <main class="p-8 space-y-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Yield Rate (Gifts)</p><p id="kpiYield" class="text-3xl font-bold text-emerald-600 mt-2">0%</p></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Engagement Rate</p><p id="kpiEngagement" class="text-3xl font-bold text-indigo-600 mt-2">0%</p><p class="text-xs text-slate-400 mt-1">Gifts + Visits + Adv. Proposals</p></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Avg Turnaround</p><p id="kpiTurnaround" class="text-3xl font-bold text-slate-800 mt-2">0 Days</p></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Output</p><p id="kpiTotal" class="text-3xl font-bold text-slate-800 mt-2">0</p><p class="text-xs text-slate-400 mt-1">Proposals logged</p></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-semibold text-slate-800 mb-4">Volume by Medium</h3><div class="h-64 flex justify-center"><canvas id="mediumChart"></canvas></div></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-semibold text-slate-800 mb-4">Outcomes Breakdown</h3><div class="h-64"><canvas id="outcomeChart"></canvas></div></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-semibold text-slate-800">Efficiency by Area of Support</h3><p class="text-xs text-slate-400 mb-4">Average Turnaround Time (Days) required by initiative</p><div class="h-80"><canvas id="areaChart"></canvas></div></div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=0&single=true&output=csv";
+
+        Papa.parse(SHEET_CSV_URL, {
+            download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+            complete: function(results) { processData(results.data, results.meta.fields); },
+            error: function() { 
+                document.getElementById('loadingStatus').innerText = "Error: Connection blocked."; 
+                document.getElementById('loadingStatus').className = "text-sm text-red-600 bg-red-50 py-1 px-3 rounded-full font-medium";
+            }
+        });
+
+        function processData(data, fields) {
+            const cleanData = data.filter(row => {
+                const mk = Object.keys(row).find(k => k.trim() === 'Medium');
+                const ok = Object.keys(row).find(k => k.trim() === 'Outcome');
+                return row[mk] && row[ok];
+            });
+            
+            let hardWins = 0, pipelineAdvances = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
+            const mediumCounts = {}, outcomeCounts = { 'Gift/Commitment': 0, 'Pipeline Advance': 0, 'Declined': 0, 'In Progress / Not Sent': 0 };
+            const areaTurnarounds = {}, areaCounts = {};
+
+            cleanData.forEach(row => {
+                const mk = Object.keys(row).find(k => k.trim() === 'Medium');
+                const ok = Object.keys(row).find(k => k.trim() === 'Outcome');
+                const dk = Object.keys(row).find(k => k.trim() === 'Project_Run_Days');
+                const ak = Object.keys(row).find(k => k.trim() === 'Area of Support');
+
+                const outcome = String(row[ok]).trim();
+                const days = Number(row[dk]);
+                const medium = String(row[mk]).trim();
+                const area = ak && row[ak] ? String(row[ak]).trim() : 'Unspecified';
+
+                mediumCounts[medium] = (mediumCounts[medium] || 0) + 1;
+
+                if (!isNaN(days) && days > 0) {
+                    totalTurnaround += days; turnaroundCount++;
+                    areaTurnarounds[area] = (areaTurnarounds[area] || 0) + days;
+                    areaCounts[area] = (areaCounts[area] || 0) + 1;
+                }
+
+                if (outcome === 'Gift/Commitment') { hardWins++; outcomeCounts['Gift/Commitment']++; } 
+                else if (outcome === 'Advanced Proposal' || outcome === 'Visit') { pipelineAdvances++; outcomeCounts['Pipeline Advance']++; } 
+                else if (outcome.includes('Decline')) { losses++; outcomeCounts['Declined']++; } 
+                else { outcomeCounts['In Progress / Not Sent']++; }
+            });
+
+            const finalizedProposals = hardWins + pipelineAdvances + losses;
+            document.getElementById('kpiTotal').innerText = cleanData.length;
+            document.getElementById('kpiYield').innerText = (finalizedProposals > 0 ? ((hardWins / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiEngagement').innerText = (finalizedProposals > 0 ? (((hardWins + pipelineAdvances) / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiTurnaround').innerText = (turnaroundCount > 0 ? (totalTurnaround / turnaroundCount).toFixed(1) : 0) + ' Days';
+
+            const mediumLabels = Object.keys(mediumCounts), mediumData = Object.values(mediumCounts);
+            const sortedAreas = Object.keys(areaTurnarounds).sort((a, b) => (areaTurnarounds[b] / areaCounts[b]) - (areaTurnarounds[a] / areaCounts[a]));
+            const areaData = sortedAreas.map(area => (areaTurnarounds[area] / areaCounts[area]).toFixed(1));
+
+            buildCharts(mediumLabels, mediumData, Object.keys(outcomeCounts), Object.values(outcomeCounts), sortedAreas, areaData);
+            document.getElementById('loadingStatus').innerText = "✓ Synced with Live Sheet";
+            document.getElementById('loadingStatus').className = "text-sm text-emerald-600 bg-emerald-50 py-1 px-3 rounded-full font-medium";
+        }
+
+        function buildCharts(mL, mD, oL, oD, aL, aD) {
+            new Chart(document.getElementById('mediumChart'), { type: 'doughnut', data: { labels: mL, datasets: [{ data: mD, backgroundColor: ['#4f46e5', '#06b6d4', '#f59e0b', '#10b981', '#94a3b8', '#ec4899'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            new Chart(document.getElementById('outcomeChart'), { type: 'bar', data: { labels: oL, datasets: [{ label: 'Proposals', data: oD, backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#94a3b8'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            new Chart(document.getElementById('areaChart'), { type: 'bar', data: { labels: aL, datasets: [{ label: 'Avg. Project Run Days', data: aD, backgroundColor: '#6366f1', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' } });
+        }
+    </script>
+</body>
+</html>
