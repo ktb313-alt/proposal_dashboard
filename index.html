@@ -7,22 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        lehigh: {
-                            brown: '#501914',
-                            gold: '#F3C000',
-                            dark: '#2d100d',
-                            bg: '#fbfaf9'
-                        }
+                        lehigh: { brown: '#501914', gold: '#F3C000', dark: '#2d100d', bg: '#fbfaf9' }
                     },
-                    fontFamily: {
-                        sans: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
-                    }
+                    fontFamily: { sans: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'] }
                 }
             }
         }
@@ -104,33 +96,152 @@
     <script>
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=0&single=true&output=csv";
 
-        // Lehigh Brand Color Palette
-        const chartColors = {
-            primary: '#501914',   
-            secondary: '#F3C000', 
-            tertiary: '#8b7b71',  
-            neutral: '#cbd5e1',   
-            dark: '#334155',      
-            accent: '#d97706'     
-        };
+        const chartColors = { primary: '#501914', secondary: '#F3C000', tertiary: '#8b7b71', neutral: '#cbd5e1', dark: '#334155', accent: '#d97706' };
         const paletteArray = [chartColors.primary, chartColors.secondary, chartColors.tertiary, chartColors.dark, chartColors.neutral, chartColors.accent];
 
-        Papa.parse(SHEET_CSV_URL, {
-            download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
-            complete: function(results) { processData(results.data, results.meta.fields); },
-            error: function() { 
-                document.getElementById('loadingStatus').innerText = "Error: Connection blocked."; 
-                document.getElementById('loadingStatus').className = "text-sm text-red-700 bg-red-50 py-1 px-3 rounded-full font-medium border border-red-200";
-            }
-        });
+        function showError(msg) {
+            console.error(msg);
+            const status = document.getElementById('loadingStatus');
+            status.innerText = msg;
+            status.className = "text-xs text-red-700 bg-red-50 py-2 px-4 rounded-full font-bold border border-red-300 shadow-sm";
+        }
+
+        try {
+            Papa.parse(SHEET_CSV_URL, {
+                download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+                complete: function(results) { 
+                    try {
+                        if (results.errors.length > 0 && results.data.length === 0) {
+                            showError("Error: Could not parse CSV. " + results.errors[0].message);
+                            return;
+                        }
+                        if (results.data.length > 0 && results.meta.fields && results.meta.fields[0].includes('<html')) {
+                            showError("Error: Google sent a webpage instead of data. Check the link.");
+                            return;
+                        }
+                        processData(results.data, results.meta.fields); 
+                    } catch(e) {
+                        showError("Script Error: " + e.message);
+                    }
+                },
+                error: function(err) { 
+                    showError("Error: Connection blocked by browser. Are you using the local file?"); 
+                }
+            });
+        } catch (e) {
+            showError("Initialization Error: " + e.message);
+        }
 
         function processData(data, fields) {
             const cleanData = data.filter(row => {
-                const mk = Object.keys(row).find(k => k.trim() === 'Medium');
-                const ok = Object.keys(row).find(k => k.trim() === 'Outcome');
-                return row[mk] && row[ok];
+                const mk = Object.keys(row).find(k => k && k.trim() === 'Medium');
+                const ok = Object.keys(row).find(k => k && k.trim() === 'Outcome');
+                return mk && ok && row[mk] && row[ok];
             });
             
+            if(cleanData.length === 0) {
+                showError("Data Error: Valid rows with 'Medium' and 'Outcome' not found.");
+                return;
+            }
+
             let hardWins = 0, addtlProposals = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
             
-            const mediumCounts =
+            const mediumCounts = {};
+            const outcomeCounts = { 'Gift/Commitment': 0, 'Additional Proposal': 0, 'Declined': 0, 'In Progress': 0, 'Not Sent': 0 };
+            const areaFrequency = {}, mediumTurnarounds = {}, mediumTurnaroundCounts = {}, quarterCounts = {};
+
+            cleanData.forEach(row => {
+                const mk = Object.keys(row).find(k => k && k.trim() === 'Medium');
+                const ok = Object.keys(row).find(k => k && k.trim() === 'Outcome');
+                const dk = Object.keys(row).find(k => k && k.trim() === 'Project_Run_Days');
+                const ak = Object.keys(row).find(k => k && k.trim() === 'Area of Support');
+                const qk = Object.keys(row).find(k => k && k.trim() === 'Request_Quarter'); 
+
+                const outcome = String(row[ok]).trim();
+                const days = Number(row[dk]);
+                const medium = String(row[mk]).trim();
+                const area = ak && row[ak] ? String(row[ak]).trim() : 'Unspecified';
+                const quarter = qk && row[qk] ? String(row[qk]).trim() : null;
+
+                mediumCounts[medium] = (mediumCounts[medium] || 0) + 1;
+                areaFrequency[area] = (areaFrequency[area] || 0) + 1;
+
+                if (quarter && quarter !== 'undefined' && quarter !== 'null') {
+                    quarterCounts[quarter] = (quarterCounts[quarter] || 0) + 1;
+                }
+
+                if (!isNaN(days) && days > 0) {
+                    totalTurnaround += days; turnaroundCount++;
+                    mediumTurnarounds[medium] = (mediumTurnarounds[medium] || 0) + days;
+                    mediumTurnaroundCounts[medium] = (mediumTurnaroundCounts[medium] || 0) + 1;
+                }
+
+                if (outcome === 'Gift/Commitment') { hardWins++; outcomeCounts['Gift/Commitment']++; } 
+                else if (outcome === 'Advanced Proposal' || outcome === 'Visit') { addtlProposals++; outcomeCounts['Additional Proposal']++; } 
+                else if (outcome.includes('Decline')) { losses++; outcomeCounts['Declined']++; } 
+                else if (outcome === 'Not Sent') { outcomeCounts['Not Sent']++; } 
+                else { outcomeCounts['In Progress']++; }
+            });
+
+            const finalizedProposals = hardWins + addtlProposals + losses;
+            document.getElementById('kpiTotal').innerText = cleanData.length;
+            document.getElementById('kpiYield').innerText = (finalizedProposals > 0 ? ((hardWins / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiEngagement').innerText = (finalizedProposals > 0 ? (((hardWins + addtlProposals) / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiTurnaround').innerText = (turnaroundCount > 0 ? (totalTurnaround / turnaroundCount).toFixed(1) : 0) + ' Days';
+
+            const mediumLabels = Object.keys(mediumCounts), mediumData = Object.values(mediumCounts);
+            const outcomeLabels = Object.keys(outcomeCounts), outcomeData = Object.values(outcomeCounts);
+            const sortedAreas = Object.keys(areaFrequency).sort((a, b) => areaFrequency[b] - areaFrequency[a]);
+            const areaData = sortedAreas.map(area => areaFrequency[area]);
+            const efficiencyLabels = Object.keys(mediumTurnarounds).filter(m => mediumTurnaroundCounts[m] > 0);
+            const efficiencyData = efficiencyLabels.map(m => (mediumTurnarounds[m] / mediumTurnaroundCounts[m]).toFixed(1));
+
+            const quarterLabels = Object.keys(quarterCounts).sort();
+            const quarterData = quarterLabels.map(q => quarterCounts[q]);
+
+            buildCharts(mediumLabels, mediumData, outcomeLabels, outcomeData, sortedAreas, areaData, efficiencyLabels, efficiencyData, quarterLabels, quarterData);
+            
+            document.getElementById('loadingStatus').innerText = "✓ Synced with Live Sheet";
+            document.getElementById('loadingStatus').className = "text-sm text-lehigh-brown bg-amber-50 py-1 px-3 rounded-full font-medium border border-lehigh-gold";
+        }
+
+        function buildCharts(mL, mD, oL, oD, areaLabels, areaFreqData, effLabels, effData, qLabels, qData) {
+            Chart.defaults.font.family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+            Chart.defaults.color = '#475569'; 
+
+            new Chart(document.getElementById('mediumChart'), { type: 'doughnut', data: { labels: mL, datasets: [{ data: mD, backgroundColor: paletteArray, borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false } });
+            
+            const outcomeColors = [chartColors.primary, chartColors.secondary, chartColors.dark, chartColors.neutral, chartColors.tertiary];
+            new Chart(document.getElementById('outcomeChart'), { type: 'bar', data: { labels: oL, datasets: [{ label: 'Proposals', data: oD, backgroundColor: outcomeColors, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            
+            new Chart(document.getElementById('areaFrequencyChart'), { type: 'bar', data: { labels: areaLabels, datasets: [{ label: 'Number of Proposals', data: areaFreqData, backgroundColor: chartColors.tertiary, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
+            
+            new Chart(document.getElementById('efficiencyChart'), { type: 'bar', data: { labels: effLabels, datasets: [{ label: 'Avg Turnaround Days', data: effData, backgroundColor: chartColors.dark, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+
+            new Chart(document.getElementById('quarterChart'), { 
+                type: 'line', 
+                data: { 
+                    labels: qLabels.length > 0 ? qLabels : ['No Data Yet'], 
+                    datasets: [{ 
+                        label: 'Total Proposals', 
+                        data: qData.length > 0 ? qData : [0], 
+                        borderColor: chartColors.secondary,
+                        backgroundColor: 'rgba(243, 192, 0, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: chartColors.primary,
+                        pointRadius: 5,
+                        fill: true,
+                        tension: 0.3
+                    }] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                } 
+            });
+        }
+    </script>
+</body>
+</html>
