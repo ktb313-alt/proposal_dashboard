@@ -48,11 +48,16 @@
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b border-slate-200 py-4 px-8 flex justify-between items-center shrink-0">
                 <h2 id="headerTitle" class="text-2xl font-bold text-lehigh-brown">Proposal Insights</h2>
-                <div id="loadingStatus" class="text-sm text-amber-700 bg-amber-50 py-1 px-3 rounded-full font-medium animate-pulse border border-amber-200">Syncing sheet data...</div>
+                <div id="loadingStatus" class="text-sm text-amber-700 bg-amber-50 py-1 px-3 rounded-full font-medium animate-pulse border border-amber-200 shadow-sm">Syncing sheet data...</div>
             </header>
             
             <main class="p-8">
                 
+                <div id="errorDump" class="hidden bg-red-50 border border-red-300 text-red-800 p-6 rounded-xl mb-8">
+                    <h3 class="font-bold text-lg mb-2">Data Read Error</h3>
+                    <p id="errorText" class="text-sm font-mono bg-white p-3 rounded border border-red-200"></p>
+                </div>
+
                 <div id="tab-proposals" class="tab-content space-y-8 block">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-brown">
@@ -81,39 +86,24 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-bold text-lehigh-brown">Proposals by Area of Support</h3><p class="text-xs text-slate-500 mb-4 font-medium">Total volume of requests per university initiative</p><div class="h-80"><canvas id="areaFrequencyChart"></canvas></div></div>
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-bold text-lehigh-brown">Efficiency by Medium</h3><p class="text-xs text-slate-500 mb-4 font-medium">Average turnaround time (days) required per format</p><div class="h-80"><canvas id="efficiencyChart"></canvas></div></div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-bold text-lehigh-brown">Proposals by Area of Support</h3><div class="h-80"><canvas id="areaFrequencyChart"></canvas></div></div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-bold text-lehigh-brown">Efficiency by Medium</h3><div class="h-80"><canvas id="efficiencyChart"></canvas></div></div>
                     </div>
 
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 class="text-lg font-bold text-lehigh-brown">Proposal Volume Over Time</h3>
-                        <p class="text-xs text-slate-500 mb-4 font-medium">Track total proposal output by quarter</p>
                         <div class="h-64"><canvas id="quarterChart"></canvas></div>
                     </div>
                 </div>
 
                 <div id="tab-remarks" class="tab-content hidden h-full flex flex-col items-center justify-center py-20">
-                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg">
-                        <h3 class="text-2xl font-bold text-lehigh-brown mb-2">Remarks Dashboard</h3>
-                        <p class="text-slate-500 mb-6">To populate this view, we will need to connect your Remarks data source.</p>
-                        <div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200">Data Connection Pending</div>
-                    </div>
+                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg"><h3 class="text-2xl font-bold text-lehigh-brown mb-2">Remarks Dashboard</h3><div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 mt-4">Data Connection Pending</div></div>
                 </div>
-
                 <div id="tab-prep" class="tab-content hidden h-full flex flex-col items-center justify-center py-20">
-                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg">
-                        <h3 class="text-2xl font-bold text-lehigh-brown mb-2">Speaking Prep Analytics</h3>
-                        <p class="text-slate-500 mb-6">To populate this view, we will need to connect your Speaking Prep tracking sheet.</p>
-                        <div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200">Data Connection Pending</div>
-                    </div>
+                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg"><h3 class="text-2xl font-bold text-lehigh-brown mb-2">Speaking Prep Analytics</h3><div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 mt-4">Data Connection Pending</div></div>
                 </div>
-
                 <div id="tab-collateral" class="tab-content hidden h-full flex flex-col items-center justify-center py-20">
-                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg">
-                        <h3 class="text-2xl font-bold text-lehigh-brown mb-2">Collateral Overview</h3>
-                        <p class="text-slate-500 mb-6">To populate this view, we will need to connect your Collateral database.</p>
-                        <div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200">Data Connection Pending</div>
-                    </div>
+                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg"><h3 class="text-2xl font-bold text-lehigh-brown mb-2">Collateral Overview</h3><div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 mt-4">Data Connection Pending</div></div>
                 </div>
 
             </main>
@@ -121,82 +111,117 @@
     </div>
 
     <script>
-        // Handles switching between tabs
         function switchTab(tabId) {
-            // 1. Hide all tab contents
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(content => {
-                content.classList.remove('block');
-                content.classList.add('hidden');
-            });
-
-            // 2. Show the selected tab content
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-            document.getElementById('tab-' + tabId).classList.add('block');
-
-            // 3. Reset all nav buttons to inactive state
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.classList.remove('bg-lehigh-dark', 'text-lehigh-gold', 'border-lehigh-gold');
-                item.classList.add('text-white/70', 'border-transparent');
-            });
-
-            // 4. Set the clicked nav button to active state
-            const activeNav = document.getElementById('nav-' + tabId);
-            activeNav.classList.remove('text-white/70', 'border-transparent');
-            activeNav.classList.add('bg-lehigh-dark', 'text-lehigh-gold', 'border-lehigh-gold');
-
-            // 5. Update the Header Title
-            const titles = {
-                'proposals': 'Proposal Insights',
-                'remarks': 'Executive Remarks',
-                'prep': 'Speaking Prep',
-                'collateral': 'Fundraising Collateral'
-            };
+            document.querySelectorAll('.tab-content').forEach(c => { c.classList.remove('block'); c.classList.add('hidden'); });
+            document.getElementById('tab-' + tabId).classList.remove('hidden'); document.getElementById('tab-' + tabId).classList.add('block');
+            document.querySelectorAll('.nav-item').forEach(i => { i.classList.remove('bg-lehigh-dark', 'text-lehigh-gold', 'border-lehigh-gold'); i.classList.add('text-white/70', 'border-transparent'); });
+            const a = document.getElementById('nav-' + tabId); a.classList.remove('text-white/70', 'border-transparent'); a.classList.add('bg-lehigh-dark', 'text-lehigh-gold', 'border-lehigh-gold');
+            const titles = { 'proposals': 'Proposal Insights', 'remarks': 'Executive Remarks', 'prep': 'Speaking Prep', 'collateral': 'Fundraising Collateral' };
             document.getElementById('headerTitle').innerText = titles[tabId];
         }
-    </script>
 
-    <script>
+        // The exact link provided
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=0&single=true&output=csv";
 
         const chartColors = { primary: '#501914', secondary: '#F3C000', tertiary: '#8b7b71', neutral: '#cbd5e1', dark: '#334155', accent: '#d97706' };
         const paletteArray = [chartColors.primary, chartColors.secondary, chartColors.tertiary, chartColors.dark, chartColors.neutral, chartColors.accent];
 
-        function showError(msg) {
+        function showError(msg, dump = null) {
             console.error(msg);
             const status = document.getElementById('loadingStatus');
-            status.innerText = msg;
+            status.innerText = "Sync Failed";
             status.className = "text-xs text-red-700 bg-red-50 py-2 px-4 rounded-full font-bold border border-red-300 shadow-sm";
+            
+            if(dump) {
+                document.getElementById('errorDump').classList.remove('hidden');
+                document.getElementById('errorText').innerText = msg + "\n\nColumns Found in Sheet: " + dump;
+            }
         }
 
         Papa.parse(SHEET_CSV_URL, {
-            download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+            download: true, 
+            header: true, 
+            dynamicTyping: true, 
+            skipEmptyLines: 'greedy', // Aggressively skip any empty rows messing up the headers
             complete: function(results) { 
                 if (results.errors.length > 0 && results.data.length === 0) {
-                    showError("Error: Could not parse CSV.");
+                    showError("Error: Could not read the CSV. Google might be blocking it.");
                     return;
                 }
-                processData(results.data, results.meta.fields); 
+                processData(results.data); 
             },
-            error: function() { showError("Error: Connection blocked."); }
+            error: function() { showError("Error: Network connection blocked."); }
         });
 
-        function processData(data, fields) {
-            const cleanData = data.filter(row => {
-                const mk = Object.keys(row).find(k => k && k.trim() === 'Medium');
-                const ok = Object.keys(row).find(k => k && k.trim() === 'Outcome');
-                return mk && ok && row[mk] && row[ok];
-            });
+        function processData(data) {
+            // Check headers
+            if (data.length === 0) {
+                showError("Error: The CSV loaded, but it appears to be completely empty.");
+                return;
+            }
             
-            if(cleanData.length === 0) return;
+            const rawHeaders = Object.keys(data[0]);
+            
+            // Find our keys flexibly
+            const mk = rawHeaders.find(k => k && k.trim().toLowerCase() === 'medium');
+            const ok = rawHeaders.find(k => k && k.trim().toLowerCase() === 'outcome');
+            const dk = rawHeaders.find(k => k && k.trim().toLowerCase() === 'project_run_days');
+            const ak = rawHeaders.find(k => k && k.trim().toLowerCase() === 'area of support');
+            const qk = rawHeaders.find(k => k && k.trim().toLowerCase() === 'request_quarter');
+
+            if (!mk || !ok) {
+                showError("Header Error: Could not find exactly 'Medium' and 'Outcome' columns. Check your sheet for typos or spaces.", JSON.stringify(rawHeaders));
+                return;
+            }
+
+            // Filter out empty rows at the bottom
+            const cleanData = data.filter(row => row[mk] && row[ok]);
+            
+            if(cleanData.length === 0) {
+                showError("Data Error: Found the columns, but no rows had both a Medium and an Outcome filled in.", JSON.stringify(rawHeaders));
+                return;
+            }
 
             let hardWins = 0, addtlProposals = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
             const mediumCounts = {}, outcomeCounts = { 'Gift/Commitment': 0, 'Additional Proposal': 0, 'Declined': 0, 'In Progress': 0, 'Not Sent': 0 };
             const areaFrequency = {}, mediumTurnarounds = {}, mediumTurnaroundCounts = {}, quarterCounts = {};
 
             cleanData.forEach(row => {
-                const mk = Object.keys(row).find(k => k && k.trim() === 'Medium');
-                const ok = Object.keys(row).find(k => k && k.trim() === 'Outcome');
-                const dk = Object.keys(row).find(k => k && k.trim() === 'Project_Run_Days');
-                const ak = Object
+                const outcome = String(row[ok]).trim();
+                const days = Number(row[dk]);
+                const medium = String(row[mk]).trim();
+                const area = ak && row[ak] ? String(row[ak]).trim() : 'Unspecified';
+                const quarter = qk && row[qk] ? String(row[qk]).trim() : null;
+
+                mediumCounts[medium] = (mediumCounts[medium] || 0) + 1;
+                areaFrequency[area] = (areaFrequency[area] || 0) + 1;
+
+                if (quarter && quarter !== 'undefined' && quarter !== 'null') {
+                    quarterCounts[quarter] = (quarterCounts[quarter] || 0) + 1;
+                }
+
+                if (!isNaN(days) && days > 0) {
+                    totalTurnaround += days; turnaroundCount++;
+                    mediumTurnarounds[medium] = (mediumTurnarounds[medium] || 0) + days;
+                    mediumTurnaroundCounts[medium] = (mediumTurnaroundCounts[medium] || 0) + 1;
+                }
+
+                if (outcome === 'Gift/Commitment') { hardWins++; outcomeCounts['Gift/Commitment']++; } 
+                else if (outcome === 'Advanced Proposal' || outcome === 'Visit' || outcome === 'Additional Proposal') { addtlProposals++; outcomeCounts['Additional Proposal']++; } 
+                else if (outcome.includes('Decline')) { losses++; outcomeCounts['Declined']++; } 
+                else if (outcome === 'Not Sent') { outcomeCounts['Not Sent']++; } 
+                else { outcomeCounts['In Progress']++; }
+            });
+
+            const finalizedProposals = hardWins + addtlProposals + losses;
+            document.getElementById('kpiTotal').innerText = cleanData.length;
+            document.getElementById('kpiYield').innerText = (finalizedProposals > 0 ? ((hardWins / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiEngagement').innerText = (finalizedProposals > 0 ? (((hardWins + addtlProposals) / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiTurnaround').innerText = (turnaroundCount > 0 ? (totalTurnaround / turnaroundCount).toFixed(1) : 0) + ' Days';
+
+            const mediumLabels = Object.keys(mediumCounts), mediumData = Object.values(mediumCounts);
+            const outcomeLabels = Object.keys(outcomeCounts), outcomeData = Object.values(outcomeCounts);
+            const sortedAreas = Object.keys(areaFrequency).sort((a, b) => areaFrequency[b] - areaFrequency[a]);
+            const areaData = sortedAreas.map(area => areaFrequency[area]);
+            const efficiencyLabels = Object.keys(mediumTurnarounds).filter(m => mediumTurnaroundCounts[m] > 0);
+            const efficiencyData = efficiencyLabels.map(m => (mediumTurnarounds[m] / mediumTurn
