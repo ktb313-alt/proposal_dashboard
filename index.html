@@ -55,7 +55,7 @@
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-gold">
                         <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Engagement Rate</p>
                         <p id="kpiEngagement" class="text-3xl font-bold text-lehigh-brown mt-2">0%</p>
-                        <p class="text-xs text-slate-400 mt-1 font-medium">Gifts + Visits + Adv. Proposals</p>
+                        <p class="text-xs text-slate-400 mt-1 font-medium">Gifts + Visits + Addtl. Proposals</p>
                     </div>
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-400">
                         <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Avg Turnaround</p>
@@ -133,9 +133,9 @@
             
             let hardWins = 0, pipelineAdvances = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
             
-            // UPDATED: Separated In Progress and Not Sent
+            // UPDATED: Changed 'Pipeline Advance' to 'Additional Proposal'
             const mediumCounts = {};
-            const outcomeCounts = { 'Gift/Commitment': 0, 'Pipeline Advance': 0, 'Declined': 0, 'In Progress': 0, 'Not Sent': 0 };
+            const outcomeCounts = { 'Gift/Commitment': 0, 'Additional Proposal': 0, 'Declined': 0, 'In Progress': 0, 'Not Sent': 0 };
             const areaFrequency = {}, mediumTurnarounds = {}, mediumTurnaroundCounts = {}, quarterCounts = {};
 
             cleanData.forEach(row => {
@@ -158,94 +158,4 @@
                     quarterCounts[quarter] = (quarterCounts[quarter] || 0) + 1;
                 }
 
-                if (!isNaN(days) && days > 0) {
-                    totalTurnaround += days; turnaroundCount++;
-                    mediumTurnarounds[medium] = (mediumTurnarounds[medium] || 0) + days;
-                    mediumTurnaroundCounts[medium] = (mediumTurnaroundCounts[medium] || 0) + 1;
-                }
-
-                // UPDATED: Logic to split Not Sent from In Progress
-                if (outcome === 'Gift/Commitment') { 
-                    hardWins++; 
-                    outcomeCounts['Gift/Commitment']++; 
-                } 
-                else if (outcome === 'Advanced Proposal' || outcome === 'Visit') { 
-                    pipelineAdvances++; 
-                    outcomeCounts['Pipeline Advance']++; 
-                } 
-                else if (outcome.includes('Decline')) { 
-                    losses++; 
-                    outcomeCounts['Declined']++; 
-                } 
-                else if (outcome === 'Not Sent') { 
-                    outcomeCounts['Not Sent']++; 
-                } 
-                else { 
-                    // Catches "In Progress" and any other unexpected strings
-                    outcomeCounts['In Progress']++; 
-                }
-            });
-
-            const finalizedProposals = hardWins + pipelineAdvances + losses;
-            document.getElementById('kpiTotal').innerText = cleanData.length;
-            document.getElementById('kpiYield').innerText = (finalizedProposals > 0 ? ((hardWins / finalizedProposals) * 100).toFixed(1) : 0) + '%';
-            document.getElementById('kpiEngagement').innerText = (finalizedProposals > 0 ? (((hardWins + pipelineAdvances) / finalizedProposals) * 100).toFixed(1) : 0) + '%';
-            document.getElementById('kpiTurnaround').innerText = (turnaroundCount > 0 ? (totalTurnaround / turnaroundCount).toFixed(1) : 0) + ' Days';
-
-            const mediumLabels = Object.keys(mediumCounts), mediumData = Object.values(mediumCounts);
-            const outcomeLabels = Object.keys(outcomeCounts), outcomeData = Object.values(outcomeCounts);
-            const sortedAreas = Object.keys(areaFrequency).sort((a, b) => areaFrequency[b] - areaFrequency[a]);
-            const areaData = sortedAreas.map(area => areaFrequency[area]);
-            const efficiencyLabels = Object.keys(mediumTurnarounds).filter(m => mediumTurnaroundCounts[m] > 0);
-            const efficiencyData = efficiencyLabels.map(m => (mediumTurnarounds[m] / mediumTurnaroundCounts[m]).toFixed(1));
-
-            const quarterLabels = Object.keys(quarterCounts).sort();
-            const quarterData = quarterLabels.map(q => quarterCounts[q]);
-
-            buildCharts(mediumLabels, mediumData, outcomeLabels, outcomeData, sortedAreas, areaData, efficiencyLabels, efficiencyData, quarterLabels, quarterData);
-            
-            document.getElementById('loadingStatus').innerText = "✓ Synced with Live Sheet";
-            document.getElementById('loadingStatus').className = "text-sm text-lehigh-brown bg-amber-50 py-1 px-3 rounded-full font-medium border border-lehigh-gold";
-        }
-
-        function buildCharts(mL, mD, oL, oD, areaLabels, areaFreqData, effLabels, effData, qLabels, qData) {
-            Chart.defaults.font.family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
-            Chart.defaults.color = '#475569'; 
-
-            new Chart(document.getElementById('mediumChart'), { type: 'doughnut', data: { labels: mL, datasets: [{ data: mD, backgroundColor: paletteArray, borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false } });
-            
-            // UPDATED: Added a 5th color (Tertiary/Taupe) for the new "Not Sent" column
-            const outcomeColors = [chartColors.primary, chartColors.secondary, chartColors.dark, chartColors.neutral, chartColors.tertiary];
-            new Chart(document.getElementById('outcomeChart'), { type: 'bar', data: { labels: oL, datasets: [{ label: 'Proposals', data: oD, backgroundColor: outcomeColors, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-            
-            new Chart(document.getElementById('areaFrequencyChart'), { type: 'bar', data: { labels: areaLabels, datasets: [{ label: 'Number of Proposals', data: areaFreqData, backgroundColor: chartColors.tertiary, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
-            
-            new Chart(document.getElementById('efficiencyChart'), { type: 'bar', data: { labels: effLabels, datasets: [{ label: 'Avg Turnaround Days', data: effData, backgroundColor: chartColors.dark, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-
-            new Chart(document.getElementById('quarterChart'), { 
-                type: 'line', 
-                data: { 
-                    labels: qLabels.length > 0 ? qLabels : ['No Data Yet'], 
-                    datasets: [{ 
-                        label: 'Total Proposals', 
-                        data: qData.length > 0 ? qData : [0], 
-                        borderColor: chartColors.secondary,
-                        backgroundColor: 'rgba(243, 192, 0, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: chartColors.primary,
-                        pointRadius: 5,
-                        fill: true,
-                        tension: 0.3
-                    }] 
-                }, 
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                } 
-            });
-        }
-    </script>
-</body>
-</html>
+                if (!isNaN(
