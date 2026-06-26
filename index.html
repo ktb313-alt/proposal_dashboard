@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -22,11 +23,23 @@
 </head>
 <body class="bg-lehigh-bg font-sans text-slate-800 antialiased">
     <div class="flex h-screen overflow-hidden">
-        <div class="w-64 bg-lehigh-brown text-white p-6 hidden md:flex flex-col justify-between border-r border-lehigh-dark">
+        
+        <div class="w-64 bg-lehigh-brown text-white p-6 hidden md:flex flex-col justify-between border-r border-lehigh-dark shrink-0">
             <div>
-                <h1 class="text-xl font-bold tracking-wider mb-8 text-lehigh-gold uppercase">FY 26 Proposals</h1>
+                <h1 class="text-xl font-bold tracking-wider mb-8 text-lehigh-gold uppercase">Advancement<br><span class="text-white text-sm tracking-normal capitalize">Writer Portfolio</span></h1>
                 <nav class="space-y-2">
-                    <a href="#" class="block py-2.5 px-4 rounded bg-lehigh-dark text-lehigh-gold font-medium border-l-4 border-lehigh-gold">Live Dashboard</a>
+                    <button onclick="switchTab('proposals')" id="nav-proposals" class="nav-item w-full text-left block py-2.5 px-4 rounded bg-lehigh-dark text-lehigh-gold font-medium border-l-4 border-lehigh-gold transition-colors">
+                        FY 26 Proposals
+                    </button>
+                    <button onclick="switchTab('remarks')" id="nav-remarks" class="nav-item w-full text-left block py-2.5 px-4 rounded hover:bg-lehigh-dark text-white/70 font-medium border-l-4 border-transparent transition-colors">
+                        Remarks
+                    </button>
+                    <button onclick="switchTab('prep')" id="nav-prep" class="nav-item w-full text-left block py-2.5 px-4 rounded hover:bg-lehigh-dark text-white/70 font-medium border-l-4 border-transparent transition-colors">
+                        Speaking Prep
+                    </button>
+                    <button onclick="switchTab('collateral')" id="nav-collateral" class="nav-item w-full text-left block py-2.5 px-4 rounded hover:bg-lehigh-dark text-white/70 font-medium border-l-4 border-transparent transition-colors">
+                        Fundraising Collateral
+                    </button>
                 </nav>
             </div>
             <div class="text-xs text-white/50 border-t border-white/20 pt-4">Connected to Google Sheets</div>
@@ -34,64 +47,115 @@
         
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b border-slate-200 py-4 px-8 flex justify-between items-center shrink-0">
-                <h2 class="text-2xl font-bold text-lehigh-brown">Proposal Insights</h2>
+                <h2 id="headerTitle" class="text-2xl font-bold text-lehigh-brown">Proposal Insights</h2>
                 <div id="loadingStatus" class="text-sm text-amber-700 bg-amber-50 py-1 px-3 rounded-full font-medium animate-pulse border border-amber-200">Syncing sheet data...</div>
             </header>
             
-            <main class="p-8 space-y-8">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-brown">
-                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Yield Rate (Gifts)</p>
-                        <p id="kpiYield" class="text-3xl font-bold text-lehigh-brown mt-2">0%</p>
+            <main class="p-8">
+                
+                <div id="tab-proposals" class="tab-content space-y-8 block">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-brown">
+                            <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Yield Rate (Gifts)</p>
+                            <p id="kpiYield" class="text-3xl font-bold text-lehigh-brown mt-2">0%</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-gold">
+                            <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Engagement Rate</p>
+                            <p id="kpiEngagement" class="text-3xl font-bold text-lehigh-brown mt-2">0%</p>
+                            <p class="text-xs text-slate-400 mt-1 font-medium">Gifts + Visits + Addtl. Proposals</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-400">
+                            <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Avg Turnaround</p>
+                            <p id="kpiTurnaround" class="text-3xl font-bold text-slate-700 mt-2">0 Days</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-400">
+                            <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Total Output</p>
+                            <p id="kpiTotal" class="text-3xl font-bold text-slate-700 mt-2">0</p>
+                            <p class="text-xs text-slate-400 mt-1 font-medium">Proposals logged</p>
+                        </div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-gold">
-                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Engagement Rate</p>
-                        <p id="kpiEngagement" class="text-3xl font-bold text-lehigh-brown mt-2">0%</p>
-                        <p class="text-xs text-slate-400 mt-1 font-medium">Gifts + Visits + Addtl. Proposals</p>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-bold text-lehigh-brown mb-4">Volume by Medium</h3><div class="h-64 flex justify-center"><canvas id="mediumChart"></canvas></div></div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-bold text-lehigh-brown mb-4">Outcomes Breakdown</h3><div class="h-64"><canvas id="outcomeChart"></canvas></div></div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-400">
-                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Avg Turnaround</p>
-                        <p id="kpiTurnaround" class="text-3xl font-bold text-slate-700 mt-2">0 Days</p>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-bold text-lehigh-brown">Proposals by Area of Support</h3><p class="text-xs text-slate-500 mb-4 font-medium">Total volume of requests per university initiative</p><div class="h-80"><canvas id="areaFrequencyChart"></canvas></div></div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-bold text-lehigh-brown">Efficiency by Medium</h3><p class="text-xs text-slate-500 mb-4 font-medium">Average turnaround time (days) required per format</p><div class="h-80"><canvas id="efficiencyChart"></canvas></div></div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-400">
-                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Total Output</p>
-                        <p id="kpiTotal" class="text-3xl font-bold text-slate-700 mt-2">0</p>
-                        <p class="text-xs text-slate-400 mt-1 font-medium">Proposals logged</p>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown">Proposal Volume Over Time</h3>
+                        <p class="text-xs text-slate-500 mb-4 font-medium">Track total proposal output by quarter</p>
+                        <div class="h-64"><canvas id="quarterChart"></canvas></div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Volume by Medium</h3>
-                        <div class="h-64 flex justify-center"><canvas id="mediumChart"></canvas></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Outcomes Breakdown</h3>
-                        <div class="h-64"><canvas id="outcomeChart"></canvas></div>
+                <div id="tab-remarks" class="tab-content hidden h-full flex flex-col items-center justify-center py-20">
+                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg">
+                        <h3 class="text-2xl font-bold text-lehigh-brown mb-2">Remarks Dashboard</h3>
+                        <p class="text-slate-500 mb-6">To populate this view, we will need to connect your Remarks data source.</p>
+                        <div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200">Data Connection Pending</div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-bold text-lehigh-brown">Proposals by Area of Support</h3>
-                        <p class="text-xs text-slate-500 mb-4 font-medium">Total volume of requests per university initiative</p>
-                        <div class="h-80"><canvas id="areaFrequencyChart"></canvas></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-bold text-lehigh-brown">Efficiency by Medium</h3>
-                        <p class="text-xs text-slate-500 mb-4 font-medium">Average turnaround time (days) required per format</p>
-                        <div class="h-80"><canvas id="efficiencyChart"></canvas></div>
+                <div id="tab-prep" class="tab-content hidden h-full flex flex-col items-center justify-center py-20">
+                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg">
+                        <h3 class="text-2xl font-bold text-lehigh-brown mb-2">Speaking Prep Analytics</h3>
+                        <p class="text-slate-500 mb-6">To populate this view, we will need to connect your Speaking Prep tracking sheet.</p>
+                        <div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200">Data Connection Pending</div>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h3 class="text-lg font-bold text-lehigh-brown">Proposal Volume Over Time</h3>
-                    <p class="text-xs text-slate-500 mb-4 font-medium">Track total proposal output by quarter (Requires 'Request_Quarter' column in sheet)</p>
-                    <div class="h-64"><canvas id="quarterChart"></canvas></div>
+                <div id="tab-collateral" class="tab-content hidden h-full flex flex-col items-center justify-center py-20">
+                    <div class="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center max-w-lg">
+                        <h3 class="text-2xl font-bold text-lehigh-brown mb-2">Collateral Overview</h3>
+                        <p class="text-slate-500 mb-6">To populate this view, we will need to connect your Collateral database.</p>
+                        <div class="inline-block bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium border border-slate-200">Data Connection Pending</div>
+                    </div>
                 </div>
+
             </main>
         </div>
     </div>
+
+    <script>
+        // Handles switching between tabs
+        function switchTab(tabId) {
+            // 1. Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.remove('block');
+                content.classList.add('hidden');
+            });
+
+            // 2. Show the selected tab content
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('tab-' + tabId).classList.add('block');
+
+            // 3. Reset all nav buttons to inactive state
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('bg-lehigh-dark', 'text-lehigh-gold', 'border-lehigh-gold');
+                item.classList.add('text-white/70', 'border-transparent');
+            });
+
+            // 4. Set the clicked nav button to active state
+            const activeNav = document.getElementById('nav-' + tabId);
+            activeNav.classList.remove('text-white/70', 'border-transparent');
+            activeNav.classList.add('bg-lehigh-dark', 'text-lehigh-gold', 'border-lehigh-gold');
+
+            // 5. Update the Header Title
+            const titles = {
+                'proposals': 'Proposal Insights',
+                'remarks': 'Executive Remarks',
+                'prep': 'Speaking Prep',
+                'collateral': 'Fundraising Collateral'
+            };
+            document.getElementById('headerTitle').innerText = titles[tabId];
+        }
+    </script>
 
     <script>
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=0&single=true&output=csv";
@@ -106,31 +170,17 @@
             status.className = "text-xs text-red-700 bg-red-50 py-2 px-4 rounded-full font-bold border border-red-300 shadow-sm";
         }
 
-        try {
-            Papa.parse(SHEET_CSV_URL, {
-                download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
-                complete: function(results) { 
-                    try {
-                        if (results.errors.length > 0 && results.data.length === 0) {
-                            showError("Error: Could not parse CSV. " + results.errors[0].message);
-                            return;
-                        }
-                        if (results.data.length > 0 && results.meta.fields && results.meta.fields[0].includes('<html')) {
-                            showError("Error: Google sent a webpage instead of data. Check the link.");
-                            return;
-                        }
-                        processData(results.data, results.meta.fields); 
-                    } catch(e) {
-                        showError("Script Error: " + e.message);
-                    }
-                },
-                error: function(err) { 
-                    showError("Error: Connection blocked by browser. Are you using the local file?"); 
+        Papa.parse(SHEET_CSV_URL, {
+            download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+            complete: function(results) { 
+                if (results.errors.length > 0 && results.data.length === 0) {
+                    showError("Error: Could not parse CSV.");
+                    return;
                 }
-            });
-        } catch (e) {
-            showError("Initialization Error: " + e.message);
-        }
+                processData(results.data, results.meta.fields); 
+            },
+            error: function() { showError("Error: Connection blocked."); }
+        });
 
         function processData(data, fields) {
             const cleanData = data.filter(row => {
@@ -139,109 +189,14 @@
                 return mk && ok && row[mk] && row[ok];
             });
             
-            if(cleanData.length === 0) {
-                showError("Data Error: Valid rows with 'Medium' and 'Outcome' not found.");
-                return;
-            }
+            if(cleanData.length === 0) return;
 
             let hardWins = 0, addtlProposals = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
-            
-            const mediumCounts = {};
-            const outcomeCounts = { 'Gift/Commitment': 0, 'Additional Proposal': 0, 'Declined': 0, 'In Progress': 0, 'Not Sent': 0 };
+            const mediumCounts = {}, outcomeCounts = { 'Gift/Commitment': 0, 'Additional Proposal': 0, 'Declined': 0, 'In Progress': 0, 'Not Sent': 0 };
             const areaFrequency = {}, mediumTurnarounds = {}, mediumTurnaroundCounts = {}, quarterCounts = {};
 
             cleanData.forEach(row => {
                 const mk = Object.keys(row).find(k => k && k.trim() === 'Medium');
                 const ok = Object.keys(row).find(k => k && k.trim() === 'Outcome');
                 const dk = Object.keys(row).find(k => k && k.trim() === 'Project_Run_Days');
-                const ak = Object.keys(row).find(k => k && k.trim() === 'Area of Support');
-                const qk = Object.keys(row).find(k => k && k.trim() === 'Request_Quarter'); 
-
-                const outcome = String(row[ok]).trim();
-                const days = Number(row[dk]);
-                const medium = String(row[mk]).trim();
-                const area = ak && row[ak] ? String(row[ak]).trim() : 'Unspecified';
-                const quarter = qk && row[qk] ? String(row[qk]).trim() : null;
-
-                mediumCounts[medium] = (mediumCounts[medium] || 0) + 1;
-                areaFrequency[area] = (areaFrequency[area] || 0) + 1;
-
-                if (quarter && quarter !== 'undefined' && quarter !== 'null') {
-                    quarterCounts[quarter] = (quarterCounts[quarter] || 0) + 1;
-                }
-
-                if (!isNaN(days) && days > 0) {
-                    totalTurnaround += days; turnaroundCount++;
-                    mediumTurnarounds[medium] = (mediumTurnarounds[medium] || 0) + days;
-                    mediumTurnaroundCounts[medium] = (mediumTurnaroundCounts[medium] || 0) + 1;
-                }
-
-                if (outcome === 'Gift/Commitment') { hardWins++; outcomeCounts['Gift/Commitment']++; } 
-                else if (outcome === 'Advanced Proposal' || outcome === 'Visit') { addtlProposals++; outcomeCounts['Additional Proposal']++; } 
-                else if (outcome.includes('Decline')) { losses++; outcomeCounts['Declined']++; } 
-                else if (outcome === 'Not Sent') { outcomeCounts['Not Sent']++; } 
-                else { outcomeCounts['In Progress']++; }
-            });
-
-            const finalizedProposals = hardWins + addtlProposals + losses;
-            document.getElementById('kpiTotal').innerText = cleanData.length;
-            document.getElementById('kpiYield').innerText = (finalizedProposals > 0 ? ((hardWins / finalizedProposals) * 100).toFixed(1) : 0) + '%';
-            document.getElementById('kpiEngagement').innerText = (finalizedProposals > 0 ? (((hardWins + addtlProposals) / finalizedProposals) * 100).toFixed(1) : 0) + '%';
-            document.getElementById('kpiTurnaround').innerText = (turnaroundCount > 0 ? (totalTurnaround / turnaroundCount).toFixed(1) : 0) + ' Days';
-
-            const mediumLabels = Object.keys(mediumCounts), mediumData = Object.values(mediumCounts);
-            const outcomeLabels = Object.keys(outcomeCounts), outcomeData = Object.values(outcomeCounts);
-            const sortedAreas = Object.keys(areaFrequency).sort((a, b) => areaFrequency[b] - areaFrequency[a]);
-            const areaData = sortedAreas.map(area => areaFrequency[area]);
-            const efficiencyLabels = Object.keys(mediumTurnarounds).filter(m => mediumTurnaroundCounts[m] > 0);
-            const efficiencyData = efficiencyLabels.map(m => (mediumTurnarounds[m] / mediumTurnaroundCounts[m]).toFixed(1));
-
-            const quarterLabels = Object.keys(quarterCounts).sort();
-            const quarterData = quarterLabels.map(q => quarterCounts[q]);
-
-            buildCharts(mediumLabels, mediumData, outcomeLabels, outcomeData, sortedAreas, areaData, efficiencyLabels, efficiencyData, quarterLabels, quarterData);
-            
-            document.getElementById('loadingStatus').innerText = "✓ Synced with Live Sheet";
-            document.getElementById('loadingStatus').className = "text-sm text-lehigh-brown bg-amber-50 py-1 px-3 rounded-full font-medium border border-lehigh-gold";
-        }
-
-        function buildCharts(mL, mD, oL, oD, areaLabels, areaFreqData, effLabels, effData, qLabels, qData) {
-            Chart.defaults.font.family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
-            Chart.defaults.color = '#475569'; 
-
-            new Chart(document.getElementById('mediumChart'), { type: 'doughnut', data: { labels: mL, datasets: [{ data: mD, backgroundColor: paletteArray, borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false } });
-            
-            const outcomeColors = [chartColors.primary, chartColors.secondary, chartColors.dark, chartColors.neutral, chartColors.tertiary];
-            new Chart(document.getElementById('outcomeChart'), { type: 'bar', data: { labels: oL, datasets: [{ label: 'Proposals', data: oD, backgroundColor: outcomeColors, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-            
-            new Chart(document.getElementById('areaFrequencyChart'), { type: 'bar', data: { labels: areaLabels, datasets: [{ label: 'Number of Proposals', data: areaFreqData, backgroundColor: chartColors.tertiary, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
-            
-            new Chart(document.getElementById('efficiencyChart'), { type: 'bar', data: { labels: effLabels, datasets: [{ label: 'Avg Turnaround Days', data: effData, backgroundColor: chartColors.dark, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-
-            new Chart(document.getElementById('quarterChart'), { 
-                type: 'line', 
-                data: { 
-                    labels: qLabels.length > 0 ? qLabels : ['No Data Yet'], 
-                    datasets: [{ 
-                        label: 'Total Proposals', 
-                        data: qData.length > 0 ? qData : [0], 
-                        borderColor: chartColors.secondary,
-                        backgroundColor: 'rgba(243, 192, 0, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: chartColors.primary,
-                        pointRadius: 5,
-                        fill: true,
-                        tension: 0.3
-                    }] 
-                }, 
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                } 
-            });
-        }
-    </script>
-</body>
-</html>
+                const ak = Object
