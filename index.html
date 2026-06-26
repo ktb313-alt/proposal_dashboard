@@ -17,28 +17,64 @@
             </div>
             <div class="text-xs text-slate-500 border-t border-slate-800 pt-4">Connected to Google Sheets</div>
         </div>
+        
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b border-slate-200 py-4 px-8 flex justify-between items-center shrink-0">
                 <h2 class="text-2xl font-bold text-slate-800">Live Proposal Insights</h2>
                 <div id="loadingStatus" class="text-sm text-amber-600 bg-amber-50 py-1 px-3 rounded-full font-medium animate-pulse">Syncing sheet data...</div>
             </header>
+            
             <main class="p-8 space-y-8">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Yield Rate (Gifts)</p><p id="kpiYield" class="text-3xl font-bold text-emerald-600 mt-2">0%</p></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Engagement Rate</p><p id="kpiEngagement" class="text-3xl font-bold text-indigo-600 mt-2">0%</p><p class="text-xs text-slate-400 mt-1">Gifts + Visits + Adv. Proposals</p></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Avg Turnaround</p><p id="kpiTurnaround" class="text-3xl font-bold text-slate-800 mt-2">0 Days</p></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Output</p><p id="kpiTotal" class="text-3xl font-bold text-slate-800 mt-2">0</p><p class="text-xs text-slate-400 mt-1">Proposals logged</p></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Yield Rate (Gifts)</p>
+                        <p id="kpiYield" class="text-3xl font-bold text-emerald-600 mt-2">0%</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Engagement Rate</p>
+                        <p id="kpiEngagement" class="text-3xl font-bold text-indigo-600 mt-2">0%</p>
+                        <p class="text-xs text-slate-400 mt-1">Gifts + Visits + Adv. Proposals</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Avg Turnaround</p>
+                        <p id="kpiTurnaround" class="text-3xl font-bold text-slate-800 mt-2">0 Days</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Output</p>
+                        <p id="kpiTotal" class="text-3xl font-bold text-slate-800 mt-2">0</p>
+                        <p class="text-xs text-slate-400 mt-1">Proposals logged</p>
+                    </div>
                 </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-semibold text-slate-800 mb-4">Volume by Medium</h3><div class="h-64 flex justify-center"><canvas id="mediumChart"></canvas></div></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-semibold text-slate-800 mb-4">Outcomes Breakdown</h3><div class="h-64"><canvas id="outcomeChart"></canvas></div></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Volume by Medium</h3>
+                        <div class="h-64 flex justify-center"><canvas id="mediumChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">Outcomes Breakdown</h3>
+                        <div class="h-64"><canvas id="outcomeChart"></canvas></div>
+                    </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 class="text-lg font-semibold text-slate-800">Efficiency by Area of Support</h3><p class="text-xs text-slate-400 mb-4">Average Turnaround Time (Days) required by initiative</p><div class="h-80"><canvas id="areaChart"></canvas></div></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800">Proposals by Area of Support</h3>
+                        <p class="text-xs text-slate-400 mb-4">Total volume of requests per university initiative</p>
+                        <div class="h-80"><canvas id="areaFrequencyChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800">Efficiency by Medium</h3>
+                        <p class="text-xs text-slate-400 mb-4">Average turnaround time (days) required per format</p>
+                        <div class="h-80"><canvas id="efficiencyChart"></canvas></div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
 
     <script>
+        // Your live Google Sheets CSV link
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=0&single=true&output=csv";
 
         Papa.parse(SHEET_CSV_URL, {
@@ -51,6 +87,7 @@
         });
 
         function processData(data, fields) {
+            // Filter to valid rows
             const cleanData = data.filter(row => {
                 const mk = Object.keys(row).find(k => k.trim() === 'Medium');
                 const ok = Object.keys(row).find(k => k.trim() === 'Outcome');
@@ -58,8 +95,15 @@
             });
             
             let hardWins = 0, pipelineAdvances = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
-            const mediumCounts = {}, outcomeCounts = { 'Gift/Commitment': 0, 'Pipeline Advance': 0, 'Declined': 0, 'In Progress / Not Sent': 0 };
-            const areaTurnarounds = {}, areaCounts = {};
+            
+            // Dictionaries for chart data
+            const mediumCounts = {};
+            const outcomeCounts = { 'Gift/Commitment': 0, 'Pipeline Advance': 0, 'Declined': 0, 'In Progress / Not Sent': 0 };
+            
+            // NEW Dictionaries for the updated charts
+            const areaFrequency = {};
+            const mediumTurnarounds = {};
+            const mediumTurnaroundCounts = {};
 
             cleanData.forEach(row => {
                 const mk = Object.keys(row).find(k => k.trim() === 'Medium');
@@ -72,39 +116,90 @@
                 const medium = String(row[mk]).trim();
                 const area = ak && row[ak] ? String(row[ak]).trim() : 'Unspecified';
 
+                // Count Mediums
                 mediumCounts[medium] = (mediumCounts[medium] || 0) + 1;
+                
+                // NEW: Count Frequency of Areas
+                areaFrequency[area] = (areaFrequency[area] || 0) + 1;
 
+                // Track Turnaround Days
                 if (!isNaN(days) && days > 0) {
-                    totalTurnaround += days; turnaroundCount++;
-                    areaTurnarounds[area] = (areaTurnarounds[area] || 0) + days;
-                    areaCounts[area] = (areaCounts[area] || 0) + 1;
+                    totalTurnaround += days; 
+                    turnaroundCount++;
+                    
+                    // NEW: Track efficiency specifically by medium
+                    mediumTurnarounds[medium] = (mediumTurnarounds[medium] || 0) + days;
+                    mediumTurnaroundCounts[medium] = (mediumTurnaroundCounts[medium] || 0) + 1;
                 }
 
+                // Categorize Outcomes
                 if (outcome === 'Gift/Commitment') { hardWins++; outcomeCounts['Gift/Commitment']++; } 
                 else if (outcome === 'Advanced Proposal' || outcome === 'Visit') { pipelineAdvances++; outcomeCounts['Pipeline Advance']++; } 
                 else if (outcome.includes('Decline')) { losses++; outcomeCounts['Declined']++; } 
                 else { outcomeCounts['In Progress / Not Sent']++; }
             });
 
+            // Update KPIs
             const finalizedProposals = hardWins + pipelineAdvances + losses;
             document.getElementById('kpiTotal').innerText = cleanData.length;
             document.getElementById('kpiYield').innerText = (finalizedProposals > 0 ? ((hardWins / finalizedProposals) * 100).toFixed(1) : 0) + '%';
             document.getElementById('kpiEngagement').innerText = (finalizedProposals > 0 ? (((hardWins + pipelineAdvances) / finalizedProposals) * 100).toFixed(1) : 0) + '%';
             document.getElementById('kpiTurnaround').innerText = (turnaroundCount > 0 ? (totalTurnaround / turnaroundCount).toFixed(1) : 0) + ' Days';
 
-            const mediumLabels = Object.keys(mediumCounts), mediumData = Object.values(mediumCounts);
-            const sortedAreas = Object.keys(areaTurnarounds).sort((a, b) => (areaTurnarounds[b] / areaCounts[b]) - (areaTurnarounds[a] / areaCounts[a]));
-            const areaData = sortedAreas.map(area => (areaTurnarounds[area] / areaCounts[area]).toFixed(1));
+            // Prep Data for Chart 1: Volume by Medium
+            const mediumLabels = Object.keys(mediumCounts);
+            const mediumData = Object.values(mediumCounts);
+            
+            // Prep Data for Chart 2: Outcomes
+            const outcomeLabels = Object.keys(outcomeCounts);
+            const outcomeData = Object.values(outcomeCounts);
 
-            buildCharts(mediumLabels, mediumData, Object.keys(outcomeCounts), Object.values(outcomeCounts), sortedAreas, areaData);
+            // Prep Data for Chart 3 (NEW): Area of Support Frequency
+            // Sort by frequency (highest to lowest)
+            const sortedAreas = Object.keys(areaFrequency).sort((a, b) => areaFrequency[b] - areaFrequency[a]);
+            const areaData = sortedAreas.map(area => areaFrequency[area]);
+
+            // Prep Data for Chart 4 (NEW): Efficiency by Medium
+            // Only include mediums that have actual turnaround data
+            const efficiencyLabels = Object.keys(mediumTurnarounds).filter(m => mediumTurnaroundCounts[m] > 0);
+            const efficiencyData = efficiencyLabels.map(m => (mediumTurnarounds[m] / mediumTurnaroundCounts[m]).toFixed(1));
+
+            // Build all charts
+            buildCharts(mediumLabels, mediumData, outcomeLabels, outcomeData, sortedAreas, areaData, efficiencyLabels, efficiencyData);
+            
+            // Update Status
             document.getElementById('loadingStatus').innerText = "✓ Synced with Live Sheet";
             document.getElementById('loadingStatus').className = "text-sm text-emerald-600 bg-emerald-50 py-1 px-3 rounded-full font-medium";
         }
 
-        function buildCharts(mL, mD, oL, oD, aL, aD) {
-            new Chart(document.getElementById('mediumChart'), { type: 'doughnut', data: { labels: mL, datasets: [{ data: mD, backgroundColor: ['#4f46e5', '#06b6d4', '#f59e0b', '#10b981', '#94a3b8', '#ec4899'] }] }, options: { responsive: true, maintainAspectRatio: false } });
-            new Chart(document.getElementById('outcomeChart'), { type: 'bar', data: { labels: oL, datasets: [{ label: 'Proposals', data: oD, backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#94a3b8'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-            new Chart(document.getElementById('areaChart'), { type: 'bar', data: { labels: aL, datasets: [{ label: 'Avg. Project Run Days', data: aD, backgroundColor: '#6366f1', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' } });
+        function buildCharts(mL, mD, oL, oD, areaLabels, areaFreqData, effLabels, effData) {
+            // Chart 1: Medium Doughnut
+            new Chart(document.getElementById('mediumChart'), { 
+                type: 'doughnut', 
+                data: { labels: mL, datasets: [{ data: mD, backgroundColor: ['#4f46e5', '#06b6d4', '#f59e0b', '#10b981', '#94a3b8', '#ec4899'] }] }, 
+                options: { responsive: true, maintainAspectRatio: false } 
+            });
+            
+            // Chart 2: Outcome Bar
+            new Chart(document.getElementById('outcomeChart'), { 
+                type: 'bar', 
+                data: { labels: oL, datasets: [{ label: 'Proposals', data: oD, backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#94a3b8'], borderRadius: 4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } 
+            });
+
+            // Chart 3: Area of Support Frequency (Horizontal Bar)
+            new Chart(document.getElementById('areaFrequencyChart'), { 
+                type: 'bar', 
+                data: { labels: areaLabels, datasets: [{ label: 'Number of Proposals', data: areaFreqData, backgroundColor: '#8b5cf6', borderRadius: 4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } 
+            });
+
+            // Chart 4: General Efficiency by Medium (Vertical Bar)
+            new Chart(document.getElementById('efficiencyChart'), { 
+                type: 'bar', 
+                data: { labels: effLabels, datasets: [{ label: 'Avg Turnaround Days', data: effData, backgroundColor: '#f43f5e', borderRadius: 4 }] }, 
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } 
+            });
         }
     </script>
 </body>
