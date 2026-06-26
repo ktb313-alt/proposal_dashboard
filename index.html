@@ -131,31 +131,6 @@
                 return row[mk] && row[ok];
             });
             
-            let hardWins = 0, pipelineAdvances = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
+            let hardWins = 0, addtlProposals = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
             
-            // UPDATED: Changed 'Pipeline Advance' to 'Additional Proposal'
-            const mediumCounts = {};
-            const outcomeCounts = { 'Gift/Commitment': 0, 'Additional Proposal': 0, 'Declined': 0, 'In Progress': 0, 'Not Sent': 0 };
-            const areaFrequency = {}, mediumTurnarounds = {}, mediumTurnaroundCounts = {}, quarterCounts = {};
-
-            cleanData.forEach(row => {
-                const mk = Object.keys(row).find(k => k.trim() === 'Medium');
-                const ok = Object.keys(row).find(k => k.trim() === 'Outcome');
-                const dk = Object.keys(row).find(k => k.trim() === 'Project_Run_Days');
-                const ak = Object.keys(row).find(k => k.trim() === 'Area of Support');
-                const qk = Object.keys(row).find(k => k.trim() === 'Request_Quarter'); 
-
-                const outcome = String(row[ok]).trim();
-                const days = Number(row[dk]);
-                const medium = String(row[mk]).trim();
-                const area = ak && row[ak] ? String(row[ak]).trim() : 'Unspecified';
-                const quarter = qk && row[qk] ? String(row[qk]).trim() : null;
-
-                mediumCounts[medium] = (mediumCounts[medium] || 0) + 1;
-                areaFrequency[area] = (areaFrequency[area] || 0) + 1;
-
-                if (quarter) {
-                    quarterCounts[quarter] = (quarterCounts[quarter] || 0) + 1;
-                }
-
-                if (!isNaN(
+            const mediumCounts =
