@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategic Messaging Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lehigh: { brown: '#501914', gold: '#F3C000', dark: '#2d100d', bg: '#fbfaf9' }
+                    },
+                    fontFamily: { sans: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-lehigh-bg font-sans text-slate-800 antialiased">
+    <div class="flex h-screen overflow-hidden">
+        <div class="w-64 bg-lehigh-brown text-white p-6 hidden md:flex flex-col justify-between border-r border-lehigh-dark">
+            <div>
+                <h1 class="text-xl font-bold tracking-wider mb-1 text-lehigh-gold uppercase">Strategic Messaging Dashboard</h1>
+                <p class="text-sm font-semibold text-lehigh-gold/80 mb-8 uppercase tracking-widest">FY 26</p>
+                <nav class="space-y-2" id="sidebarNav">
+                    <a onclick="switchTab('proposals', this)" class="tab-link block py-2.5 px-4 rounded bg-lehigh-dark text-lehigh-gold font-medium border-l-4 border-lehigh-gold cursor-pointer">Proposals</a>
+                    <a onclick="switchTab('remarks', this)" class="tab-link block py-2.5 px-4 rounded text-white/80 hover:bg-lehigh-dark/50 hover:text-white transition-colors cursor-pointer">Remarks</a>
+                    <a onclick="switchTab('fundraising', this)" class="tab-link block py-2.5 px-4 rounded text-white/80 hover:bg-lehigh-dark/50 hover:text-white transition-colors cursor-pointer">Fundraising Materials</a>
+                    <a onclick="switchTab('coaching', this)" class="tab-link block py-2.5 px-4 rounded text-white/80 hover:bg-lehigh-dark/50 hover:text-white transition-colors cursor-pointer">Coaching</a>
+                </nav>
+            </div>
+            <div class="text-xs text-white/50 border-t border-white/20 pt-4">Connected to Google Sheets</div>
+        </div>
+        
+        <div class="flex-1 flex flex-col overflow-y-auto">
+            <header class="bg-white border-b border-slate-200 py-4 px-8 flex justify-between items-center shrink-0">
+                <h2 id="dashboardTitle" class="text-2xl font-bold text-lehigh-brown">Proposal Insights</h2>
+                <div id="loadingStatus" class="text-sm text-amber-700 bg-amber-50 py-1 px-3 rounded-full font-medium animate-pulse border border-amber-200">Syncing sheet data...</div>
+            </header>
+            
+            <main id="dashboardContent" class="p-8 space-y-8">
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const sheetUrls = {
+            proposals: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=0&single=true&output=csv",
+            remarks: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=479797388&single=true&output=csv",
+            fundraising: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=105402401&single=true&output=csv",
+            coaching: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo0ImEELgvWGMbsYCIoD6O2WyWlqRm0NwrKZVzLxaih1Mgd4fThXreiD1xb1icgJseFMoXZrKHyfxP/pub?gid=2032767504&single=true&output=csv"
+        };
+        const tabTitles = { proposals: "Proposal", remarks: "Remarks", fundraising: "Fundraising Materials", coaching: "Coaching" };
+        let chartInstances = {};
+        let currentTab = 'proposals';
+
+        const chartColors = { primary: '#501914', secondary: '#F3C000', tertiary: '#8b7b71', neutral: '#cbd5e1', dark: '#334155', accent: '#d97706' };
+        const paletteArray = [chartColors.primary, chartColors.secondary, chartColors.tertiary, chartColors.dark, chartColors.neutral, chartColors.accent];
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-link').forEach(el => {
+                el.className = "tab-link block py-2.5 px-4 rounded text-white/80 hover:bg-lehigh-dark/50 hover:text-white transition-colors cursor-pointer";
+            });
+            element.className = "tab-link block py-2.5 px-4 rounded bg-lehigh-dark text-lehigh-gold font-medium border-l-4 border-lehigh-gold cursor-pointer";
+            
+            document.getElementById('dashboardTitle').innerText = tabTitles[tabId] + " Insights";
+            currentTab = tabId;
+            renderDashboardUI(tabId);
+            loadData(tabId);
+        }
+
+        function renderDashboardUI(tab) {
+            const container = document.getElementById('dashboardContent');
+            let html = '';
+            
+            if (tab === 'proposals') {
+                html = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-brown">
+                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Yield Rate (Gifts)</p>
+                        <p id="kpiYield" class="text-3xl font-bold text-lehigh-brown mt-2">0%</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-gold">
+                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Engagement Rate</p>
+                        <p id="kpiEngagement" class="text-3xl font-bold text-lehigh-brown mt-2">0%</p>
+                        <p class="text-xs text-slate-400 mt-1 font-medium">Gifts + Visits + Addtl. Proposals</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-400">
+                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Avg Turnaround</p>
+                        <p id="kpiTurnaround" class="text-3xl font-bold text-slate-700 mt-2">0 Days</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-slate-400">
+                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Total Output</p>
+                        <p id="kpiTotal" class="text-3xl font-bold text-slate-700 mt-2">0</p>
+                        <p class="text-xs text-slate-400 mt-1 font-medium">Items logged</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Volume by Medium</h3>
+                        <div class="h-64 flex justify-center"><canvas id="mediumChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Outcomes Breakdown</h3>
+                        <div class="h-64"><canvas id="outcomeChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown">Volume by Area of Support</h3>
+                        <p class="text-xs text-slate-500 mb-4 font-medium">Total volume of requests per university initiative</p>
+                        <div class="h-80"><canvas id="areaFrequencyChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown">Efficiency by Medium</h3>
+                        <p class="text-xs text-slate-500 mb-4 font-medium">Average turnaround time (days) required per format</p>
+                        <div class="h-80"><canvas id="efficiencyChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-lehigh-brown">Output Volume Over Time</h3>
+                    <p class="text-xs text-slate-500 mb-4 font-medium">Track total output by quarter</p>
+                    <div class="h-64"><canvas id="quarterChart"></canvas></div>
+                </div>
+                `;
+            } else if (tab === 'remarks') {
+                html = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-brown">
+                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Total Remarks</p>
+                        <p id="kpiTotal" class="text-3xl font-bold text-slate-700 mt-2">0</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Volume by Type</h3>
+                        <div class="h-64 flex justify-center"><canvas id="typeChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-2">
+                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Primary Speaker Frequency</h3>
+                        <div class="h-64"><canvas id="primarySpeakerChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-lehigh-brown mb-4">Secondary Speaker Frequency</h3>
+                    <div class="h-80"><canvas id="secondarySpeakerChart"></canvas></div>
+                </div>
+                `;
+            } else if (tab === 'coaching') {
+                html = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-brown">
+                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Total Coaching Sessions</p>
+                        <p id="kpiTotal" class="text-3xl font-bold text-slate-700 mt-2">0</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Coaching by Area</h3>
+                        <div class="h-64 flex justify-center"><canvas id="areaChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Coaching by Person</h3>
+                        <div class="h-64"><canvas id="personChart"></canvas></div>
+                    </div>
+                </div>
+                `;
+            } else if (tab === 'fundraising') {
+                html = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-lehigh-brown">
+                        <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Total Materials</p>
+                        <p id="kpiTotal" class="text-3xl font-bold text-slate-700 mt-2">0</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">Volume by Type</h3>
+                        <div class="h-64 flex justify-center"><canvas id="typeChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-lehigh-brown mb-4">New vs Refresh</h3>
+                        <div class="h-64 flex justify-center"><canvas id="statusChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-lehigh-brown mb-4">Volume by Area</h3>
+                    <div class="h-80"><canvas id="areaChart"></canvas></div>
+                </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function showError(msg) {
+            console.error(msg);
+            const status = document.getElementById('loadingStatus');
+            status.innerText = msg;
+            status.className = "text-xs text-red-700 bg-red-50 py-2 px-4 rounded-full font-bold border border-red-300 shadow-sm";
+        }
+
+        function loadData(tab) {
+            const status = document.getElementById('loadingStatus');
+            status.innerText = "Syncing sheet data...";
+            status.className = "text-sm text-amber-700 bg-amber-50 py-1 px-3 rounded-full font-medium animate-pulse border border-amber-200";
+
+            try {
+                Papa.parse(sheetUrls[tab], {
+                    download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+                    complete: function(results) { 
+                        try {
+                            if (results.errors.length > 0 && results.data.length === 0) {
+                                showError("Error: Could not parse CSV. " + results.errors[0].message);
+                                return;
+                            }
+                            if (results.data.length > 0 && results.meta.fields && results.meta.fields[0].includes('<html')) {
+                                showError("Error: Google sent a webpage instead of data. Check the link.");
+                                return;
+                            }
+                            processData(results.data, results.meta.fields); 
+                        } catch(e) {
+                            showError("Script Error: " + e.message);
+                        }
+                    },
+                    error: function(err) { 
+                        showError("Error: Connection blocked by browser. Are you using the local file?"); 
+                    }
+                });
+            } catch (e) {
+                showError("Initialization Error: " + e.message);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDashboardUI('proposals');
+            loadData('proposals');
+        });
+
+        function processData(data, fields) {
+            Object.values(chartInstances).forEach(chart => { if (chart) chart.destroy(); });
+            chartInstances = {};
+            Chart.defaults.font.family = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+            Chart.defaults.color = '#475569'; 
+
+            if (currentTab === 'proposals') {
+                processProposals(data);
+            } else if (currentTab === 'remarks') {
+                processRemarks(data);
+            } else if (currentTab === 'coaching') {
+                processCoaching(data);
+            } else if (currentTab === 'fundraising') {
+                processFundraising(data);
+            }
+            
+            document.getElementById('loadingStatus').innerText = "✓ Synced with Live Sheet";
+            document.getElementById('loadingStatus').className = "text-sm text-lehigh-brown bg-amber-50 py-1 px-3 rounded-full font-medium border border-lehigh-gold";
+        }
+
+        function countFrequencies(data, columnKeyword) {
+            const counts = {};
+            data.forEach(row => {
+                const key = Object.keys(row).find(k => k && k.trim().toLowerCase().includes(columnKeyword.toLowerCase()));
+                if (key && row[key]) {
+                    let val = String(row[key]).trim();
+                    if(val && val !== 'None' && val !== 'null' && val !== 'undefined') {
+                        counts[val] = (counts[val] || 0) + 1;
+                    }
+                }
+            });
+            return counts;
+        }
+
+        function getSorted(counts) {
+            const labels = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
+            const data = labels.map(l => counts[l]);
+            return { labels, data };
+        }
+
+        function processRemarks(data) {
+            const typeCounts = countFrequencies(data, 'Type');
+            const priCounts = countFrequencies(data, 'Primary Speaker');
+            const secCounts = countFrequencies(data, 'Secondary Speaker');
+            
+            const validData = data.filter(row => Object.keys(row).some(k => k && k.trim().includes('Title')));
+            document.getElementById('kpiTotal').innerText = validData.length;
+
+            const tData = getSorted(typeCounts);
+            const pData = getSorted(priCounts);
+            const sData = getSorted(secCounts);
+
+            chartInstances.type = new Chart(document.getElementById('typeChart'), { type: 'doughnut', data: { labels: tData.labels, datasets: [{ data: tData.data, backgroundColor: paletteArray, borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false } });
+            
+            chartInstances.pri = new Chart(document.getElementById('primarySpeakerChart'), { type: 'bar', data: { labels: pData.labels, datasets: [{ label: 'Events', data: pData.data, backgroundColor: chartColors.primary, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+
+            chartInstances.sec = new Chart(document.getElementById('secondarySpeakerChart'), { type: 'bar', data: { labels: sData.labels, datasets: [{ label: 'Events', data: sData.data, backgroundColor: chartColors.tertiary, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
+        }
+
+        function processCoaching(data) {
+            const areaCounts = countFrequencies(data, 'Area');
+            const personCounts = countFrequencies(data, 'Person');
+            
+            const validData = data.filter(row => Object.keys(row).some(k => k && k.trim().includes('Person')));
+            document.getElementById('kpiTotal').innerText = validData.length;
+
+            const aData = getSorted(areaCounts);
+            const pData = getSorted(personCounts);
+
+            chartInstances.area = new Chart(document.getElementById('areaChart'), { type: 'doughnut', data: { labels: aData.labels, datasets: [{ data: aData.data, backgroundColor: paletteArray, borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false } });
+            
+            chartInstances.person = new Chart(document.getElementById('personChart'), { type: 'bar', data: { labels: pData.labels, datasets: [{ label: 'Sessions', data: pData.data, backgroundColor: chartColors.secondary, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        }
+
+        function processFundraising(data) {
+            const areaCounts = countFrequencies(data, 'Area');
+            const typeCounts = countFrequencies(data, 'Type');
+            const statusCounts = countFrequencies(data, 'New or Refresh');
+            
+            const validData = data.filter(row => Object.keys(row).some(k => k && k.trim().includes('Area')));
+            document.getElementById('kpiTotal').innerText = validData.length;
+
+            const aData = getSorted(areaCounts);
+            const tData = getSorted(typeCounts);
+            const sData = getSorted(statusCounts);
+
+            chartInstances.type = new Chart(document.getElementById('typeChart'), { type: 'doughnut', data: { labels: tData.labels, datasets: [{ data: tData.data, backgroundColor: paletteArray, borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false } });
+            
+            chartInstances.status = new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: sData.labels, datasets: [{ data: sData.data, backgroundColor: [chartColors.primary, chartColors.tertiary], borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false } });
+            
+            chartInstances.area = new Chart(document.getElementById('areaChart'), { type: 'bar', data: { labels: aData.labels, datasets: [{ label: 'Materials', data: aData.data, backgroundColor: chartColors.dark, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
+        }
+
+        function processProposals(data) {
+            const cleanData = data.filter(row => {
+                const mk = Object.keys(row).find(k => k && k.trim() === 'Medium');
+                const ok = Object.keys(row).find(k => k && k.trim() === 'Outcome');
+                return mk && ok && row[mk] && row[ok];
+            });
+            
+            if(cleanData.length === 0) {
+                showError("Data Error: Valid rows with 'Medium' and 'Outcome' not found.");
+                return;
+            }
+
+            let hardWins = 0, addtlProposals = 0, losses = 0, totalTurnaround = 0, turnaroundCount = 0;
+            
+            const mediumCounts = {};
+            const outcomeCounts = { 'Gift/Commitment': 0, 'Additional Proposal': 0, 'Declined': 0, 'In Progress': 0, 'Not Sent': 0 };
+            const areaFrequency = {}, mediumTurnarounds = {}, mediumTurnaroundCounts = {}, quarterCounts = {};
+
+            cleanData.forEach(row => {
+                const mk = Object.keys(row).find(k => k && k.trim() === 'Medium');
+                const ok = Object.keys(row).find(k => k && k.trim() === 'Outcome');
+                const dk = Object.keys(row).find(k => k && k.trim() === 'Project_Run_Days');
+                const ak = Object.keys(row).find(k => k && k.trim() === 'Area of Support');
+                const qk = Object.keys(row).find(k => k && k.trim() === 'Request_Quarter'); 
+
+                const outcome = String(row[ok]).trim();
+                const days = Number(row[dk]);
+                const medium = String(row[mk]).trim();
+                const area = ak && row[ak] ? String(row[ak]).trim() : 'Unspecified';
+                const quarter = qk && row[qk] ? String(row[qk]).trim() : null;
+
+                mediumCounts[medium] = (mediumCounts[medium] || 0) + 1;
+                areaFrequency[area] = (areaFrequency[area] || 0) + 1;
+
+                if (quarter && quarter !== 'undefined' && quarter !== 'null') {
+                    quarterCounts[quarter] = (quarterCounts[quarter] || 0) + 1;
+                }
+
+                if (!isNaN(days) && days > 0) {
+                    totalTurnaround += days; turnaroundCount++;
+                    mediumTurnarounds[medium] = (mediumTurnarounds[medium] || 0) + days;
+                    mediumTurnaroundCounts[medium] = (mediumTurnaroundCounts[medium] || 0) + 1;
+                }
+
+                if (outcome === 'Gift/Commitment') { hardWins++; outcomeCounts['Gift/Commitment']++; } 
+                else if (outcome === 'Advanced Proposal' || outcome === 'Visit') { addtlProposals++; outcomeCounts['Additional Proposal']++; } 
+                else if (outcome.includes('Decline')) { losses++; outcomeCounts['Declined']++; } 
+                else if (outcome === 'Not Sent') { outcomeCounts['Not Sent']++; } 
+                else { outcomeCounts['In Progress']++; }
+            });
+
+            const finalizedProposals = hardWins + addtlProposals + losses;
+            document.getElementById('kpiTotal').innerText = cleanData.length;
+            document.getElementById('kpiYield').innerText = (finalizedProposals > 0 ? ((hardWins / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiEngagement').innerText = (finalizedProposals > 0 ? (((hardWins + addtlProposals) / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiTurnaround').innerText = (turnaroundCount > 0 ? (totalTurnaround / turnaroundCount).toFixed(1) : 0) + ' Days';
+
+            const mediumLabels = Object.keys(mediumCounts), mediumData = Object.values(mediumCounts);
+            const outcomeLabels = Object.keys(outcomeCounts), outcomeData = Object.values(outcomeCounts);
+            const sortedAreas = Object.keys(areaFrequency).sort((a, b) => areaFrequency[b] - areaFrequency[a]);
+            const areaData = sortedAreas.map(area => areaFrequency[area]);
+            const efficiencyLabels = Object.keys(mediumTurnarounds).filter(m => mediumTurnaroundCounts[m] > 0);
+            const efficiencyData = efficiencyLabels.map(m => (mediumTurnarounds[m] / mediumTurnaroundCounts[m]).toFixed(1));
+
+            const quarterLabels = Object.keys(quarterCounts).sort();
+            const quarterData = quarterLabels.map(q => quarterCounts[q]);
+
+            chartInstances.medium = new Chart(document.getElementById('mediumChart'), { type: 'doughnut', data: { labels: mediumLabels, datasets: [{ data: mediumData, backgroundColor: paletteArray, borderWidth: 2, borderColor: '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false } });
+            
+            const outcomeColors = [chartColors.primary, chartColors.secondary, chartColors.dark, chartColors.neutral, chartColors.tertiary];
+            chartInstances.outcome = new Chart(document.getElementById('outcomeChart'), { type: 'bar', data: { labels: outcomeLabels, datasets: [{ label: 'Items', data: outcomeData, backgroundColor: outcomeColors, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            
+            chartInstances.area = new Chart(document.getElementById('areaFrequencyChart'), { type: 'bar', data: { labels: sortedAreas, datasets: [{ label: 'Volume', data: areaData, backgroundColor: chartColors.tertiary, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } } });
+            
+            chartInstances.efficiency = new Chart(document.getElementById('efficiencyChart'), { type: 'bar', data: { labels: efficiencyLabels, datasets: [{ label: 'Avg Turnaround Days', data: efficiencyData, backgroundColor: chartColors.dark, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+
+            chartInstances.quarter = new Chart(document.getElementById('quarterChart'), { 
+                type: 'line', 
+                data: { 
+                    labels: quarterLabels.length > 0 ? quarterLabels : ['No Data Yet'], 
+                    datasets: [{ 
+                        label: 'Total Output', 
+                        data: quarterData.length > 0 ? quarterData : [0], 
+                        borderColor: chartColors.secondary,
+                        backgroundColor: 'rgba(243, 192, 0, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: chartColors.primary,
+                        pointRadius: 5,
+                        fill: true,
+                        tension: 0.3
+                    }] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                } 
+            });
+        }
+    </script>
+</body>
+</html>
