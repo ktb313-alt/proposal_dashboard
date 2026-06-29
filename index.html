@@ -437,10 +437,10 @@
                 else { outcomeCounts['In Progress']++; }
             });
 
-            const finalizedProposals = hardWins + addtlProposals + losses;
-            document.getElementById('kpiTotal').innerText = cleanData.length;
-            document.getElementById('kpiYield').innerText = (finalizedProposals > 0 ? ((hardWins / finalizedProposals) * 100).toFixed(1) : 0) + '%';
-            document.getElementById('kpiEngagement').innerText = (finalizedProposals > 0 ? (((hardWins + addtlProposals) / finalizedProposals) * 100).toFixed(1) : 0) + '%';
+            const totalProposals = cleanData.length;
+            document.getElementById('kpiTotal').innerText = totalProposals;
+            document.getElementById('kpiYield').innerText = (totalProposals > 0 ? ((hardWins / totalProposals) * 100).toFixed(1) : 0) + '%';
+            document.getElementById('kpiEngagement').innerText = (totalProposals > 0 ? (((hardWins + addtlProposals) / totalProposals) * 100).toFixed(1) : 0) + '%';
             document.getElementById('kpiTurnaround').innerText = (turnaroundCount > 0 ? (totalTurnaround / turnaroundCount).toFixed(1) : 0) + ' Days';
 
             const mediumLabels = Object.keys(mediumCounts), mediumData = Object.values(mediumCounts);
